@@ -7,7 +7,7 @@
 window.__SITE_DATA__ = {
   "meta": {
     "schemaVersion": 1,
-    "updatedAt": "2026-11-25T18:01:12+08:00",
+    "updatedAt": "2026-11-25T18:05:14+08:00",
     "updatedBy": "admin",
     "siteName": "泉心泉意 · 软件版本中心"
   },
@@ -137,6 +137,36 @@ window.__SITE_DATA__ = {
           },
           "internalNote": "",
           "id": "rel_mwvyecau_gjx41d"
+        }
+      ]
+    },
+    {
+      "id": "p_jl31n0",
+      "name": "涡旋仪V5-PRO-爱津生物",
+      "category": "嵌入式固件",
+      "owner": "",
+      "archived": false,
+      "releases": [
+        {
+          "version": "V1.0",
+          "screenVersion": "",
+          "date": "2026-11-25T18:01:12",
+          "channel": "stable",
+          "status": "normal",
+          "tags": [],
+          "readme": "26/7/16\n1，中文版本修改为爱津智能涡旋仪版本\n2，英文版本修改为爱津智能涡旋仪版本\n3，软件版本号：V1.0",
+          "changelog": [],
+          "download": {
+            "type": "baidupan",
+            "url": "https://pan.baidu.com/s/1duKPyL8W1xh5zHwgVKrLPA",
+            "password": "69rt",
+            "fileName": "YQ-2401_05_aijin涡旋振荡仪软件-V1.0-20260810",
+            "fileSize": "6.87MB",
+            "sha256": "",
+            "mirror": ""
+          },
+          "internalNote": "",
+          "id": "rel_mwvyjj2u_8jgstw"
         }
       ]
     }
