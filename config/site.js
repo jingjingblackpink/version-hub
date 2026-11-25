@@ -55,12 +55,20 @@ window.__SITE_CONFIG__ = {
     allowAdminPreviewClient: true // 允许 admin 账号访问客户端页面预览
   },
 
-  /* ---------- GitHub 直推（M5 阶段启用） ---------- */
+  /* ---------- GitHub 直推（一键保存到仓库） ---------- */
+  // 使用前需在后台「⚙ 设置 → GitHub 直推」里填入 Token：
+  //   GitHub → Settings → Developer settings → Personal access tokens
+  //          → Fine-grained tokens → Generate new token
+  //   Repository access : 只勾 version-hub 这一个仓库
+  //   Permissions       : 只给 Contents → Read and write（其他一律不给）
+  //   Expiration        : 建议 30~90 天
+  // Token 只存在你自己浏览器的 localStorage 里，不会写入仓库、不会上传到任何地方。
   github: {
-    enabled: false,           // 本地阶段为 false，保存走「导出文件」模式
+    enabled: true,               // 是否启用一键直推（未填 Token 时自动降级为导出文件）
     owner: 'jingjingblackpink',  // 你的 GitHub 用户名
-    repo: 'version-hub',      // 仓库名
+    repo: 'version-hub',         // 仓库名
     branch: 'main',
-    dataPath: 'data/versions.json'
+    // 每次发布同时更新这两个文件：json 供线上读取，js 供本地 file:// 预览
+    dataPaths: ['data/versions.json', 'data/versions.js']
   }
 };

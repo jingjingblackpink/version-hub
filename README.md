@@ -91,7 +91,53 @@
 
 ## 三、发布到网站（关键）
 
-本站是纯静态网站，**数据文件就是数据库**。发布 = 把导出的文件覆盖到仓库。
+本站是纯静态网站，**数据文件就是数据库**。发布 = 把 `data/versions.json` 与 `data/versions.js` 更新到仓库。有三种方式，推荐第一种。
+
+### 方式 ①：后台一键直推（推荐）
+
+配置一次 Token，之后每次发布只需点一下按钮。
+
+**首次配置（约 2 分钟）**
+
+1. GitHub 右上头像 → **Settings** → 左下 **Developer settings**
+2. **Personal access tokens** → **Fine-grained tokens** → **Generate new token**
+3. 按下表设置（**权限务必最小化**）：
+
+| 配置项 | 必须设为 |
+|---|---|
+| Token name | 随意，如 `version-hub-publish` |
+| Expiration | 30~90 天 |
+| Repository access | **Only select repositories** → 只勾 `version-hub` |
+| Permissions | **只给** `Contents` → **Read and write**，其他一律不开 |
+
+4. 生成后复制 Token（`github_pat_` 开头，只显示一次）
+5. 回到网站后台 → **⚙ 设置 → GitHub 直推** → 粘贴 → **保存 Token**
+6. 会自动「测试连接」，看到 `✓ 连接成功，具备写入权限` 就可以了
+
+**日常发布**
+
+```
+后台录入/修改 → 💾 保存版本 → ⬆ 保存到 GitHub → 确认 → 完成
+                                              ↓
+                        等 1~2 分钟 Pages 重新构建 → 客户端刷新可见
+```
+
+一次点击就会在仓库产生一条 commit，同时更新 `versions.json` 和 `versions.js`。
+
+**安全说明**
+
+- Token 只存在**你自己这台浏览器**的 localStorage 里，不写入仓库、不提交 git、不发给任何第三方
+- 界面上只显示掩码（`github_pat_AAA…wxyz`），保存后输入框立即清空
+- 「⚙ 设置 → 清除」可随时吊销本地保存
+- 因为 Token 存在浏览器里，**必须用最小权限的独立 Token**，不要复用你命令行/其他用途的 Token
+
+**技术细节**：走 GitHub **Git Data API** 做原子提交（`ref → commit → tree → commit → 更新 ref`），一次 commit 同时更新两个文件，不会出现「json 更新了、js 没更新」的中间态。更新引用时用 `force: false`，若期间有人往仓库推过东西，GitHub 会直接拒绝并提示你先刷新合并，**不会覆盖别人的改动**。若数据与远端完全一致则自动跳过，不产生空提交。
+
+### 方式 ②：一键脚本（走本地 git）
+
+在本地仓库目录双击 **`发布数据.bat`**：自动从「下载」文件夹找最新的导出文件 → 显示变更摘要 → commit + push。版本数变少时会二次确认，防误删。
+
+### 方式 ③：手动上传（不需要任何 Token）
 
 ```
 后台 → 导出 → 导出发布文件（JSON + JS）
@@ -103,22 +149,34 @@ GitHub 仓库 → data 目录 → Add file → Upload files → 拖入两个文�
 等待 1~2 分钟 Pages 重新构建 → 客户端刷新即可看到最新数据
 ```
 
-> ⚠️ **两个文件必须一起上传**：
+> ⚠️ 方式 ②③ 都依赖**两个文件一起更新**：
 > - `versions.json` —— 线上（GitHub Pages）通过 `fetch` 读取，是**权威数据源**
 > - `versions.js` —— 本地双击（`file://`）时读取的**镜像**
 >
-> 后台的「导出发布文件」会一次生成两个，内容自动保持一致，不用手工同步。
+> 「导出发布文件」会一次生成两个，内容自动一致。方式 ① 由程序保证，无需操心。
 
-### 首次部署到 GitHub Pages
+### 当前部署信息
 
-1. GitHub 新建**公开**仓库（例如 `version-hub`）
-   > 私有仓库的 Pages 需要 GitHub Pro 及以上套餐
-2. `Add file → Upload files`，把本项目**全部文件**拖进去（保持目录结构），Commit
-3. 仓库 `Settings → Pages → Build and deployment`
-   - Source：`Deploy from a branch`
-   - Branch：`main` / `/ (root)` → Save
-4. 等 1~2 分钟，访问 `https://<你的用户名>.github.io/version-hub/`
-5. 建议修改 `config/site.js` 里的账号密码与站点名后再上传
+| 项目 | 值 |
+|---|---|
+| 线上地址 | https://jingjingblackpink.github.io/version-hub/ |
+| 仓库 | https://github.com/jingjingblackpink/version-hub |
+| 分支 / 目录 | `main` / `/ (root)` |
+| Pages 状态 | 已开启（Deploy from a branch） |
+
+### 关于资源版本号（改代码后必看）
+
+三个 HTML 里的 CSS/JS 引用都带了 `?v=2` 后缀，用于**缓存穿透**：
+
+```html
+<script src="assets/js/admin.js?v=2"></script>
+```
+
+浏览器会缓存静态资源。如果只更新了 JS 而浏览器仍用缓存里的旧 JS，配上新 HTML 就会出错
+（例如表头与数据列错位、脚本报错）。加上版本号后，改版本号即等于强制所有访问者重新下载。
+
+**规则**：只要改动了 `assets/` 下的 JS/CSS 或 HTML 结构，就把三个 HTML 里的 `?v=2` 统一改成 `?v=3`、`?v=4`…
+只改 `data/` 里的数据文件则**不需要**改版本号（线上数据是 fetch 读取，自带时间戳防缓存）。
 
 ### 发布状态怎么看
 
@@ -177,7 +235,7 @@ Markdown 渲染与 CSV 解析均为自研实现，因此在国内网络环境下
 | `options.showSha256` / `showMirror` | 是否显示 SHA256 / 镜像地址字段 | `true` / `false` |
 | `options.useDateTime` | 上传时间是否精确到秒（`false` 则退回纯日期控件） | `true` |
 | `options.maxFailTimes` / `lockSeconds` | 登录失败锁定策略 | 5 次 / 30 秒 |
-| `github.*` | M5 阶段 GitHub API 直推配置 | `enabled: false` |
+| `github.*` | 一键直推配置：`enabled` / `owner` / `repo` / `branch` / `dataPaths` | 已配置好本仓库 |
 
 > 后台「⚙ 设置」里可以**实时修改并预览**上述大部分选项（存于本机浏览器）。
 > 要让设置对所有访问者生效，需把同样的改动写进 `config/site.js` 并上传仓库。
@@ -265,7 +323,7 @@ Markdown 渲染与 CSV 解析均为自研实现，因此在国内网络环境下
 | **草稿只在本机** | 后台修改先存浏览器 localStorage，换电脑或清缓存前请先导出备份 |
 | **网盘无法直链下载** | 百度网盘无公开免费直链 API，本站只做「跳转 + 一键复制提取码」 |
 
-需要真正的访问控制？见下方路线图 M5+，或参考方案文档中的「方案 C」（Cloudflare Workers / Supabase）。
+需要真正的访问控制？见下方路线图，或参考方案文档中的「方案 C」（Cloudflare Workers / Supabase）。
 
 ---
 
@@ -274,7 +332,7 @@ Markdown 渲染与 CSV 解析均为自研实现，因此在国内网络环境下
 | 阶段 | 内容 | 状态 |
 |---|---|---|
 | M1~M4 | 登录鉴权、客户端表格、后台录入、导入导出 | ✅ **已完成** |
-| M5 | GitHub API 直推：配置 Token 后「一键保存到 GitHub」，免手动上传 | ⏳ 待开发（`store.github` 已预留接口） |
+| M5 | GitHub API 直推：配置 Token 后「一键保存到 GitHub」，免手动上传 | ✅ **已完成**（Git Data API 原子提交 + 冲突检测） |
 | M6 | 部署联调、自定义域名、国内访问优化 | ⏳ |
 | M7 | 视觉打磨、操作日志、网盘链接有效性体检 | ⏳ |
 | v1.5 | 直接在 GitHub 网页端编辑 `versions.csv`，免上传 | 💭 |
@@ -291,11 +349,12 @@ Markdown 渲染与 CSV 解析均为自研实现，因此在国内网络环境下
 | 测试套件 | 覆盖内容 | 结果 |
 |---|---|---|
 | 逻辑单元测试 | 版本号比较、Markdown 渲染与 XSS 转义、CSV 解析/往返、**日期时间归一化（含秒/毫秒/Excel 序列号/纯日期兼容）**、**串口屏版本 CSV 往返与旧 CSV 缺列兼容**、数据加载、草稿读写、导出格式、登录鉴权与锁定、开放重定向防护 | **138 / 138** |
-| DOM 集成测试 | 三个页面的真实加载、登录流程、录入校验、增删改归档、搜索筛选、Markdown 展开、导入导出、设置生效、权限守卫、**datetime-local 控件与双行日期显示**、**串口屏版本字段的录入/回填/列显隐/设置联动**、**按项目名称分组展示（同名合并、异名分组、组内分行、组排序、分组筛选）**、**跨页面数据流（admin 录入 → client 可见）**、localStorage 不可用时的内存降级 | **265 / 265** |
+| DOM 集成测试 | 三个页面的真实加载、登录流程、录入校验、增删改归档、搜索筛选、Markdown 展开、导入导出、设置生效、权限守卫、**datetime-local 控件与双行日期显示**、**串口屏版本字段的录入/回填/列显隐/设置联动**、**按项目名称分组展示（同名合并、异名分组、组内分行、组排序、分组筛选）**、**跨页面数据流（admin 录入 → client 可见）**、**Token 配置/掩码/清除与一键发布 UI 全流程**、localStorage 不可用时的内存降级 | **303 / 303** |
 | HTTP 部署测试 | 静态资源完整性（20 个资源无 404）、`fetch versions.json` 真实链路、缓存穿透参数、fetch 失败自动回退 | **32 / 32** |
+| GitHub 直推测试 | mock GitHub API 全流程：5 步调用序列与顺序、base_tree 防误删、force=false 冲突检测、双文件原子提交、提交内容 UTF-8 完整性、Bearer 认证头、Token 不入 URL、内容无变化跳过、401/403/404/409/422/网络异常/同步抛错/非 JSON 响应处理、verify 权限探测、Token 保存与清除、发布后状态联动 | **82 / 82** |
 | CSS 校验测试 | PostCSS 语法与大括号平衡、空规则与可疑声明、HTML/JS 类名 ↔ CSS 定义交叉比对、HUD 科技风关键特性、旧样式残留、中文字距上限守护、弹层溢出裁剪与 z-index 层级回归、WCAG 文字对比度校验、硬编码深色背景扫描、**按钮状态 CSS 层叠求解器（11 种状态 × 2 主题的实际生效色对比度）**、**逐列对齐校验（防表头与数据错位）** | **152 / 152** |
 
-合计 **587 项断言全部通过**。
+合计 **707 项断言全部通过**（五套测试，全部不依赖外网、不打真实 GitHub API）。
 
 ### 可访问性指标（自动校验，不达标即测试失败）
 

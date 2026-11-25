@@ -7,8 +7,8 @@
 <title>后台管理 · 软件版本中心</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='a' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23f43f5e'/><stop offset='.5' stop-color='%23a855f7'/><stop offset='1' stop-color='%233b82f6'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='url(%23a)'/><text x='16' y='23' font-size='17' font-family='Consolas,Menlo,monospace' font-weight='bold' fill='%23fff' text-anchor='middle'>A</text></svg>">
 <meta name="theme-color" content="#04060e">
-<link rel="stylesheet" href="assets/css/common.css">
-<link rel="stylesheet" href="assets/css/admin.css">
+<link rel="stylesheet" href="assets/css/common.css?v=2">
+<link rel="stylesheet" href="assets/css/admin.css?v=2">
 </head>
 <body>
 
@@ -306,6 +306,46 @@
       </div>
 
       <div class="setting-group">
+        <div class="setting-group-title">GitHub 直推（一键保存）</div>
+
+        <div class="alert alert-info" style="margin-bottom:13px">
+          <span>🔑</span>
+          <div>
+            <div class="alert-title">Token 怎么获取</div>
+            GitHub 右上头像 → <strong>Settings</strong> → 左下 <strong>Developer settings</strong> →
+            <strong>Personal access tokens</strong> → <strong>Fine-grained tokens</strong> → Generate new token
+            <ul style="margin:7px 0 0;padding-left:19px;line-height:1.85">
+              <li><strong>Repository access</strong>：只勾 <strong>Only select repositories</strong> → 选中本仓库</li>
+              <li><strong>Permissions</strong>：只给 <strong>Contents → Read and write</strong>，其他一律不开</li>
+              <li><strong>Expiration</strong>：建议 30~90 天，到期重新生成</li>
+            </ul>
+            <div style="margin-top:7px">Token 只保存在<strong>你自己这台浏览器</strong>的 localStorage 里，
+            不会写入仓库、不会提交到 git、不会发给任何第三方。</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="s-token">Personal Access Token</label>
+          <div class="pwd-row">
+            <input type="password" id="s-token" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+            <button type="button" class="btn btn-sm" id="btn-token-show">显示</button>
+          </div>
+          <div class="field-hint" id="token-status">未配置</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">目标仓库</label>
+          <div class="field-hint mono" id="gh-repo-info" style="margin-top:0"></div>
+        </div>
+
+        <div class="row-wrap">
+          <button type="button" class="btn btn-sm btn-primary" id="btn-token-save">保存 Token</button>
+          <button type="button" class="btn btn-sm" id="btn-token-verify">测试连接</button>
+          <button type="button" class="btn btn-sm btn-danger" id="btn-token-clear">清除</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
         <div class="setting-group-title danger-zone" style="border:none;padding:0;margin:0 0 10px">
           <div class="dz-title">⚠ 危险操作</div>
         </div>
@@ -347,13 +387,13 @@
 
 <div id="toast-box" class="toast-box"></div>
 
-<script src="config/site.js"></script>
-<script src="data/versions.js"></script>
-<script src="assets/js/utils.js"></script>
-<script src="assets/js/markdown.js"></script>
-<script src="assets/js/csv.js"></script>
-<script src="assets/js/auth.js"></script>
-<script src="assets/js/store.js"></script>
-<script src="assets/js/admin.js"></script>
+<script src="config/site.js?v=2"></script>
+<script src="data/versions.js?v=2"></script>
+<script src="assets/js/utils.js?v=2"></script>
+<script src="assets/js/markdown.js?v=2"></script>
+<script src="assets/js/csv.js?v=2"></script>
+<script src="assets/js/auth.js?v=2"></script>
+<script src="assets/js/store.js?v=2"></script>
+<script src="assets/js/admin.js?v=2"></script>
 </body>
 </html>

@@ -158,6 +158,7 @@
     switch (state.source) {
       case 'local-draft': return '本地草稿（未发布）';
       case 'remote-json': return '已同步仓库数据';
+      case 'published': return '已提交仓库（Pages 构建中）';
       case 'embedded-js': return '本地文件数据';
       default: return '空数据';
     }
@@ -276,24 +277,28 @@
     return s;
   };
 
-  /* ================= 导出 ================= */
+  /* ================= 数据文件文本生成 ================= */
 
-  function jsonText(db) {
-    return JSON.stringify(db || state.db, null, 2) + '\n';
+  function jsonBody(db) {
+    return JSON.stringify(db || state.db || emptyDb(), null, 2);
   }
 
-  store.exportJsonText = function () { return jsonText(); };
-
-  store.exportJsText = function () {
-    return (
-      '/**\n' +
-      ' * ⚠️ 本文件由后台「导出数据文件」自动生成，是 data/versions.json 的本地镜像。\n' +
-      ' * 用途：让网页在 file:// （双击本地打开）时也能读取数据。\n' +
-      ' * 请勿手工编辑 —— 修改数据请在后台进行，然后重新导出覆盖。\n' +
+  /** versions.js 镜像（供 file:// 双击打开时读取） */
+  function buildJsMirror(db) {
+    return '/**\n' +
+      ' * ⚠️ 本文件由程序自动生成，是 data/versions.json 的本地镜像。\n' +
+      ' * 用途：让网页在 file:// 协议（双击本地打开）下也能读取数据；\n' +
+      ' *       线上（GitHub Pages）优先 fetch data/versions.json。\n' +
+      ' * 请勿手工编辑 —— 修改数据请在后台进行，再用「保存到 GitHub」或「导出发布文件」。\n' +
       ' */\n' +
-      'window.__SITE_DATA__ = ' + jsonText() + ';\n'
-    );
-  };
+      'window.__SITE_DATA__ = ' + jsonBody(db) + ';\n';
+  }
+
+  /* ================= 导出 ================= */
+
+  store.exportJsonText = function () { return jsonBody() + '\n'; };
+
+  store.exportJsText = function () { return buildJsMirror(); };
 
   store.exportCsvText = function () {
     return VH.csv.fromDb(state.db || emptyDb());
@@ -330,16 +335,220 @@
     return { count: res.count, warnings: res.warnings };
   };
 
-  /* ================= GitHub 直推（M5 预留） ================= */
+  /* ================= 发布状态 ================= */
+
+  /**
+   * 直推成功后调用：清除草稿标记，但保留内存中的数据。
+   * 不立刻重新 fetch —— Pages CDN 需要 1~2 分钟才生效，
+   * 马上重拉会读到旧内容，让人误以为刚发布的修改丢了。
+   */
+  store.markPublished = function () {
+    VH.storage.remove(DRAFT_KEY);
+    state.dirty = false;
+    state.source = 'published';
+    return state.db;
+  };
+
+  /* =========================================================
+     GitHub 直推（方案 B）
+     ---------------------------------------------------------
+     用 Git Data API 做「原子发布」：
+         ref → commits(取 tree) → trees → commits → 更新 ref
+     一次 commit 同时更新 versions.json 与 versions.js，
+     避免用两次 Contents API 造成「json 更新了、js 没更新」的中间态。
+
+     更新 ref 时 force:false —— 若期间有人往仓库推过东西，
+     GitHub 会直接拒绝，从而天然实现并发冲突检测，不会覆盖别人的改动。
+     ========================================================= */
+
+  var GH_TOKEN_KEY = 'vh.github.token';
+
+  function ghConfig() {
+    var g = VH.cfg().github || {};
+    var paths = (g.dataPaths && g.dataPaths.length) ? g.dataPaths.slice() : ['data/versions.json', 'data/versions.js'];
+    return {
+      owner: g.owner || '',
+      repo: g.repo || '',
+      branch: g.branch || 'main',
+      paths: paths,
+      jsonPath: paths.filter(function (p) { return /\.json$/i.test(p); })[0] || 'data/versions.json',
+      jsPath: paths.filter(function (p) { return /\.js$/i.test(p); })[0] || 'data/versions.js'
+    };
+  }
+
+  function ghError(status, data, apiPath) {
+    var msg = (data && (data.message || data.error)) || ('HTTP ' + status);
+    var e = new Error(msg);
+    e.status = status;
+    e.ghPath = apiPath || '';
+    if (status === 401 || status === 403) {
+      e.kind = 'auth';
+      e.hint = 'Token 无效、已过期或权限不足。请到「⚙ 设置 → GitHub 直推」重新配置：' +
+        'Fine-grained token · 仅授权本仓库 · 权限只给 Contents: Read and write';
+    } else if (status === 404) {
+      e.kind = 'notfound';
+      e.hint = '仓库、分支或文件不存在。请检查 config/site.js 中的 github.owner / repo / branch';
+    } else if (status === 409 || status === 422) {
+      e.kind = 'conflict';
+      e.hint = '仓库在你编辑期间被别人更新过（或分支开了保护规则）。' +
+        '请点顶栏「⟳ 刷新」重新加载最新数据，合并后再发布，以免覆盖别人的改动。';
+    }
+    return e;
+  }
+
+  function ghNetworkError(cause) {
+    var e = new Error('网络请求失败：' + ((cause && cause.message) || cause));
+    e.kind = 'network';
+    e.hint = '国内访问 api.github.com 可能不稳定。请重试，或改用「导出发布文件」手动上传。';
+    return e;
+  }
+
+  function ghRequest(apiPath, method, body) {
+    var c = ghConfig();
+    var token = VH.storage.get(GH_TOKEN_KEY, '');
+    if (!token) {
+      var noTok = new Error('尚未配置 GitHub Token');
+      noTok.kind = 'notoken';
+      noTok.hint = '请到「⚙ 设置 → GitHub 直推」填入 Fine-grained Personal Access Token';
+      return Promise.reject(noTok);
+    }
+    if (typeof global.fetch !== 'function') {
+      return Promise.reject(new Error('当前环境不支持 fetch，无法直推；请改用「导出发布文件」'));
+    }
+    var url = 'https://api.github.com/repos/' +
+      encodeURIComponent(c.owner) + '/' + encodeURIComponent(c.repo) + apiPath;
+
+    // fetch 在某些环境下可能同步抛错，这里兜住，保证永远返回 Promise
+    var pending;
+    try {
+      pending = global.fetch(url, {
+        method: method || 'GET',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type': 'application/json'
+        },
+        body: body === undefined ? undefined : JSON.stringify(body)
+      });
+    } catch (syncErr) {
+      return Promise.reject(ghNetworkError(syncErr));
+    }
+
+    return Promise.resolve(pending).then(function (res) {
+      return res.text().then(function (text) {
+        var data = null;
+        if (text) { try { data = JSON.parse(text); } catch (e) { data = null; } }
+        if (!res.ok) throw ghError(res.status, data, apiPath);
+        return data;
+      });
+    }, function (netErr) {
+      // 必须 throw：若只 return，Promise 会变成 resolved，调用方的 catch 收不到
+      throw ghNetworkError(netErr);
+    });
+  }
 
   store.github = {
+    TOKEN_KEY: GH_TOKEN_KEY,
+    config: ghConfig,
+
+    hasToken: function () { return !!VH.storage.get(GH_TOKEN_KEY, ''); },
+    getToken: function () { return VH.storage.get(GH_TOKEN_KEY, ''); },
+    setToken: function (t) { return VH.storage.set(GH_TOKEN_KEY, String(t || '').trim()); },
+    clearToken: function () { VH.storage.remove(GH_TOKEN_KEY); },
+
+    /** 掩码显示，避免 Token 完整出现在屏幕上 */
+    maskToken: function (t) {
+      t = String(t || '');
+      if (t.length <= 18) return t.slice(0, 4) + '****';
+      return t.slice(0, 14) + '…' + t.slice(-4);
+    },
+
+    /** 是否可一键直推：配置开启 + 已填 Token + owner/repo 齐全 */
     enabled: function () {
       var g = VH.cfg().github || {};
-      return !!g.enabled && !!VH.storage.get('vh.github.token', '');
+      var c = ghConfig();
+      return !!g.enabled && store.github.hasToken() && !!c.owner && !!c.repo;
     },
-    /** 占位：M5 阶段实现 GET sha → PUT contents */
-    publish: function () {
-      return Promise.reject(new Error('GitHub 直推尚未启用（M5 阶段），当前请使用「导出数据文件」后上传到仓库。'));
+
+    /** 校验 Token：能否读取仓库、是否有推送权限 */
+    verify: function () {
+      return ghRequest('', 'GET').then(function (repo) {
+        var perm = (repo && repo.permissions) || {};
+        var c = ghConfig();
+        return {
+          ok: true,
+          fullName: (repo && repo.full_name) || (c.owner + '/' + c.repo),
+          canPush: !!perm.push,
+          isPrivate: !!(repo && repo.private),
+          defaultBranch: (repo && repo.default_branch) || c.branch,
+          pagesUrl: 'https://' + c.owner + '.github.io/' + c.repo + '/'
+        };
+      });
+    },
+
+    /**
+     * 原子发布整份数据到仓库。
+     * @param {object} db      要发布的数据（默认取当前内存数据）
+     * @param {string} message 提交说明
+     * @returns {Promise<{skipped:boolean, commit:?string, tree:string, files:string[], message?:string}>}
+     */
+    publish: function (db, message) {
+      var c = ghConfig();
+      if (!c.owner || !c.repo) {
+        return Promise.reject(new Error('config/site.js 未配置 github.owner / github.repo'));
+      }
+      var target = db || state.db;
+      if (!target) return Promise.reject(new Error('没有可发布的数据'));
+
+      var files = {};
+      files[c.jsonPath] = jsonBody(target) + '\n';
+      files[c.jsPath] = buildJsMirror(target);
+      var filePaths = Object.keys(files);
+
+      return ghRequest('/git/ref/heads/' + encodeURIComponent(c.branch), 'GET')
+        .then(function (ref) {
+          if (!ref || !ref.object || !ref.object.sha) throw new Error('读不到分支引用，请确认分支名是否为 ' + c.branch);
+          var baseCommit = ref.object.sha;
+          return ghRequest('/git/commits/' + baseCommit, 'GET').then(function (commit) {
+            if (!commit || !commit.tree) throw new Error('读不到基准提交');
+            return { baseCommit: baseCommit, baseTree: commit.tree.sha };
+          });
+        })
+        .then(function (base) {
+          var entries = filePaths.map(function (p) {
+            return { path: p, mode: '100644', type: 'blob', content: files[p] };
+          });
+          // base_tree 必传：否则新树只含这两个文件，会把仓库其他文件全删掉
+          return ghRequest('/git/trees', 'POST', { base_tree: base.baseTree, tree: entries })
+            .then(function (tree) { return { base: base, tree: tree }; });
+        })
+        .then(function (ctx) {
+          // 内容完全没变 → 树哈希相同，跳过，不制造空提交
+          if (ctx.tree && ctx.tree.sha === ctx.base.baseTree) {
+            return { skipped: true, commit: null, tree: ctx.tree.sha, files: filePaths };
+          }
+          var msg = message ||
+            ('chore(data): 更新版本数据 @ ' + VH.nowIso().slice(0, 16).replace('T', ' '));
+          return ghRequest('/git/commits', 'POST', {
+            message: msg,
+            tree: ctx.tree.sha,
+            parents: [ctx.base.baseCommit]
+          }).then(function (commit) {
+            return ghRequest('/git/refs/heads/' + encodeURIComponent(c.branch), 'PATCH', {
+              sha: commit.sha,
+              force: false
+            }).then(function () {
+              return {
+                skipped: false,
+                commit: commit.sha,
+                tree: ctx.tree.sha,
+                files: filePaths,
+                message: msg
+              };
+            });
+          });
+        });
     }
   };
 })(window);

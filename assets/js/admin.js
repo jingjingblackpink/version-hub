@@ -3,7 +3,7 @@
  *
  * 数据流：表单 → store（内存 + localStorage 草稿）→ 列表渲染
  * 发布方式（v1.0 / 方案 A）：导出 versions.json + versions.js → 上传覆盖仓库
- * 发布方式（M5 / 方案 B）：GitHub API 直推，当前为占位提示
+ * 发布方式二（方案 B）：配置 Token 后「保存到 GitHub」，走 Git Data API 原子提交
  */
 (function (global) {
   'use strict';
@@ -189,25 +189,45 @@
   function renderStatus() {
     var el = $('#data-status');
     var dirty = VH.store.isDirty();
-    el.textContent = dirty ? '● 有未发布修改' : '已发布状态';
-    el.className = 'badge ' + (dirty ? 'badge-beta' : 'badge-stable');
+    var src = VH.store.getSource();
+    if (dirty) {
+      el.textContent = '● 有未发布修改';
+      el.className = 'badge badge-beta';
+    } else if (src === 'published') {
+      el.textContent = '✓ 已提交仓库';
+      el.className = 'badge badge-stable';
+    } else {
+      el.textContent = '已发布状态';
+      el.className = 'badge badge-stable';
+    }
     VH.markTitleDirty(dirty, BASE_TITLE);
+
+    var ghBtn = $('#btn-github');
+    if (ghBtn) {
+      ghBtn.title = VH.store.github.enabled()
+        ? '一键提交到 GitHub 仓库（直推已配置）'
+        : '尚未配置 GitHub Token，点击前往设置；也可用「导出」手动上传';
+    }
   }
 
   function renderBanner() {
     var html = '';
     var isFile = global.location.protocol === 'file:';
+    var ghReady = VH.store.github.enabled();
+    var howTo = ghReady
+      ? '点右上 <strong>「⬆ 保存到 GitHub」</strong> 即可一键发布，Pages 约 1~2 分钟后生效。'
+      : '发布方式两种：① 在 <strong>「⚙ 设置 → GitHub 直推」</strong> 配置 Token，之后点 ' +
+        '<strong>「⬆ 保存到 GitHub」</strong> 一键发布；② 用 <strong>「导出 → 导出发布文件」</strong>，' +
+        '把两个文件上传到仓库 <code>data/</code> 目录（或在仓库目录双击 <code>发布数据.bat</code>）。';
 
     if (isFile) {
       html += '<div class="alert alert-info" style="margin-bottom:12px"><span>💻</span><div>' +
         '<div class="alert-title">本地开发模式（file://）</div>' +
-        '所有修改保存在<strong>本机浏览器草稿</strong>中，刷新不会丢失。' +
-        '要发布到网站：点右上「导出 → 导出发布文件」，把得到的 <code>versions.json</code> 和 <code>versions.js</code> ' +
-        '一起覆盖到仓库的 <code>data/</code> 目录即可。</div></div>';
+        '所有修改保存在<strong>本机浏览器草稿</strong>中，刷新不会丢失。' + howTo + '</div></div>';
     } else if (VH.store.isDirty()) {
       html += '<div class="alert alert-warn" style="margin-bottom:12px"><span>⚠️</span><div>' +
         '<div class="alert-title">本机存在未发布的修改</div>' +
-        '其他人访问网站仍看到旧数据。请点「导出 → 导出发布文件」并覆盖仓库中的两个数据文件。</div></div>';
+        '其他人访问网站仍看到旧数据。' + howTo + '</div></div>';
     }
     $('#banner-area').innerHTML = html;
 
@@ -689,7 +709,7 @@
       '<div class="alert" style="margin-top:14px"><span>💡</span><div>' +
       '<div class="alert-title">小提示</div>' +
       '· 两个文件必须<strong>一起</strong>上传：<code>versions.json</code> 供线上使用，<code>versions.js</code> 供本地双击预览使用<br>' +
-      '· 不想每次上传？M5 阶段将支持配置 Token 后「一键保存到 GitHub」<br>' +
+      '· 不想每次手动上传？到「⚙ 设置 → GitHub 直推」配置 Token，之后点「⬆ 保存到 GitHub」一键发布<br>' +
       '· 上传前建议先导出一份 JSON 作为本地备份</div></div>' +
       '<div class="alert alert-warn" style="margin-top:12px"><span>⚠️</span><div>' +
       '当前页面的修改仅保存在<strong>本机浏览器草稿</strong>中。换电脑或清除浏览器数据前，请务必先导出备份。</div></div>'
@@ -754,6 +774,8 @@
     $('#s-sha').checked = (c.options || {}).showSha256 !== false;
     $('#s-mirror').checked = !!(c.options || {}).showMirror;
     $('#s-baidu').checked = !!(c.options || {}).requireBaiduPan;
+    $('#s-token').value = '';
+    renderGithubInfo();
     openModal('modal-settings');
   }
 
@@ -849,30 +871,172 @@
     VH.$$('.dropdown-menu').forEach(function (m) { m.hidden = true; });
   }
 
-  function openGithubDialog() {
-    var g = VH.cfg().github || {};
-    showInfo('保存到 GitHub（M5 阶段功能）',
-      '<div class="alert alert-warn" style="margin-bottom:14px"><span>🚧</span><div>' +
-      '<div class="alert-title">一键直推功能尚未启用</div>' +
-      '当前处于<strong>本地开发阶段（M1~M4）</strong>，数据保存采用「导出文件 + 手动上传」的方案 A 通路，' +
-      '功能完整可正常使用。M5 阶段会加入 GitHub API 直推，届时这里会变成真正的一键保存。</div></div>' +
-      '<div class="alert alert-info" style="margin-bottom:14px"><span>✅</span><div>' +
-      '<div class="alert-title">现在怎么发布？</div>' +
-      '点「导出 → 导出发布文件」下载两个文件，上传到仓库 <code>data/</code> 目录即可，约 1 分钟完成。</div></div>' +
-      '<p class="small muted" style="margin-bottom:6px">M5 阶段将实现的直推配置（当前 <code>config/site.js</code> 中）：</p>' +
-      '<table class="table" style="font-size:12.5px"><tbody>' +
-      '<tr><td style="width:110px" class="muted">启用状态</td><td>' + (g.enabled ? '已启用' : '<strong>未启用</strong>（github.enabled = false）') + '</td></tr>' +
-      '<tr><td class="muted">仓库</td><td class="mono">' + VH.escapeHtml((g.owner || '<未设置>') + '/' + (g.repo || '')) + '</td></tr>' +
-      '<tr><td class="muted">分支</td><td class="mono">' + VH.escapeHtml(g.branch || 'main') + '</td></tr>' +
-      '<tr><td class="muted">数据路径</td><td class="mono">' + VH.escapeHtml(g.dataPath || '') + '</td></tr>' +
-      '</tbody></table>' +
-      '<div class="row-wrap" style="margin-top:14px">' +
-      '<button type="button" class="btn btn-primary btn-sm" id="go-export">立即导出发布文件</button>' +
-      '<button type="button" class="btn btn-sm" id="go-guide">查看详细发布步骤</button></div>'
-    );
-    var b1 = $('#go-export'), b2 = $('#go-guide');
-    if (b1) b1.addEventListener('click', function () { closeModal('modal-info'); exportBundle(); });
-    if (b2) b2.addEventListener('click', function () { closeModal('modal-info'); openPublishGuide(); });
+  /* =========================================================
+     GitHub 一键直推
+     ========================================================= */
+
+  function ghRepoLabel() {
+    var c = VH.store.github.config();
+    return c.owner + '/' + c.repo + ' @ ' + c.branch;
+  }
+
+  function tokenGuideHtml() {
+    return 'GitHub → Settings → Developer settings → Personal access tokens → ' +
+      '<strong>Fine-grained tokens</strong><br>' +
+      '· Repository access：只勾选 <code>version-hub</code> 这一个仓库<br>' +
+      '· Permissions：只给 <code>Contents: Read and write</code>，其他一律不开<br>' +
+      '· Expiration：30~90 天<br>' +
+      '生成后粘贴到「⚙ 设置 → GitHub 直推」，点「保存 Token」。';
+  }
+
+  function buildCommitMessage(data) {
+    var rows = VH.store.flatReleases(data);
+    var latest = rows.length ? rows[0] : null;
+    var msg = 'chore(data): 更新版本数据';
+    if (latest) msg += '（' + latest.project.name + ' ' + latest.release.version + '）';
+    return msg;
+  }
+
+  function publishToGithub() {
+    if (!VH.store.github.enabled()) {
+      openSettings();
+      var t = $('#s-token');
+      if (t) { t.focus(); }
+      VH.toast('请先配置 GitHub Token', 'warn');
+      return;
+    }
+
+    var data = VH.store.getDb();
+    if (!data) { VH.toast('没有可发布的数据', 'error'); return; }
+
+    var st = VH.store.stats(data);
+    var paths = VH.store.github.config().paths;
+    if (!VH.confirm(
+      '确定发布到 GitHub 吗？\n\n' +
+      '仓库：' + ghRepoLabel() + '\n' +
+      '内容：' + st.projects + ' 个项目 / ' + st.releases + ' 个版本\n' +
+      '将更新：' + paths.join('、') + '\n\n' +
+      '发布后 GitHub Pages 需 1~2 分钟生效。'
+    )) return;
+
+    var btn = $('#btn-github');
+    var original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 发布中…';
+
+    VH.store.github.publish(data, buildCommitMessage(data))
+      .then(function (res) {
+        VH.store.markPublished();
+        renderAll();
+        if (res.skipped) {
+          VH.toast('数据与远端一致，无需提交', 'info');
+          return;
+        }
+        showInfo('✓ 已发布到 GitHub',
+          '<div class="alert alert-success"><span>🎉</span><div>' +
+          '<div class="alert-title">提交成功</div>' +
+          '提交 <code>' + VH.escapeHtml(String(res.commit).slice(0, 10)) + '</code> 已推送到 ' +
+          '<code>' + VH.escapeHtml(ghRepoLabel()) + '</code></div></div>' +
+          '<table class="table" style="font-size:12.5px;margin-top:12px"><tbody>' +
+          res.files.map(function (f) {
+            return '<tr><td class="mono" style="width:240px">' + VH.escapeHtml(f) +
+              '</td><td class="muted">已更新</td></tr>';
+          }).join('') +
+          '</tbody></table>' +
+          '<div class="alert alert-info" style="margin-top:12px"><span>⏳</span><div>' +
+          '<div class="alert-title">请稍等 1~2 分钟</div>' +
+          'GitHub Pages 需要重新构建，之后客户端页面即可看到最新数据。<br>' +
+          '若刷新后仍是旧内容，请按 <kbd>Ctrl</kbd>+<kbd>F5</kbd> 强制刷新。</div></div>');
+        VH.toast('已发布，提交号 ' + String(res.commit).slice(0, 7), 'success');
+      })
+      .catch(function (err) {
+        showPublishError(err);
+      })
+      .then(function () {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      });
+  }
+
+  function showPublishError(err) {
+    var kind = err && err.kind;
+    var body = '<div class="alert alert-danger"><span>✕</span><div>' +
+      '<div class="alert-title">' + VH.escapeHtml((err && err.message) || '未知错误') + '</div>' +
+      (err && err.hint ? VH.escapeHtml(err.hint).replace(/\n/g, '<br>') : '') +
+      (err && err.status
+        ? '<div class="small muted" style="margin-top:6px">HTTP ' + err.status +
+          (err.ghPath ? ' · ' + VH.escapeHtml(err.ghPath) : '') + '</div>'
+        : '') +
+      '</div></div>';
+
+    if (kind === 'auth' || kind === 'notoken') {
+      body += '<div class="alert alert-info" style="margin-top:12px"><span>🔑</span><div>' +
+        '<div class="alert-title">配置 Token</div>' + tokenGuideHtml() + '</div></div>';
+    }
+
+    // 任何失败都要先安抚：数据没丢，且有退路
+    body += '<div class="alert" style="margin-top:12px"><span>💡</span><div>' +
+      '<div class="alert-title">数据没有丢</div>' +
+      '直推失败不影响本机数据，修改仍完整保留在草稿中。你可以：<br>' +
+      '· 修正上面的问题后，重新点 <strong>「⬆ 保存到 GitHub」</strong><br>' +
+      '· 或改用 <strong>「导出 → 导出发布文件」</strong>，把两个文件手动上传到仓库 <code>data/</code> 目录<br>' +
+      '· 或在本地仓库目录双击 <code>发布数据.bat</code>，走 git 命令发布</div></div>';
+
+    showInfo('发布失败', body);
+    VH.toast('发布失败：' + ((err && err.message) || ''), 'error');
+  }
+
+  /* ---------- Token 配置交互 ---------- */
+
+  function refreshTokenStatus(msg, tone) {
+    var el = $('#token-status');
+    if (!el) return;
+    if (msg) {
+      var color = tone === 'ok' ? 'var(--success)' : (tone === 'warn' ? 'var(--warn)' : 'var(--danger)');
+      el.innerHTML = '<span style="color:' + color + '">' + msg + '</span>';
+      return;
+    }
+    var t = VH.store.github.getToken();
+    el.innerHTML = t
+      ? '已配置：<code>' + VH.escapeHtml(VH.store.github.maskToken(t)) + '</code> · 仅存于本机浏览器'
+      : '<span class="muted">未配置 —— 配置后即可用「保存到 GitHub」一键发布</span>';
+  }
+
+  function renderGithubInfo() {
+    var c = VH.store.github.config();
+    var info = $('#gh-repo-info');
+    if (info) info.textContent = c.owner + '/' + c.repo + '  @ ' + c.branch + '   ·   ' + c.paths.join('   ');
+    refreshTokenStatus();
+  }
+
+  function verifyToken(quietOnSuccess) {
+    var btn = $('#btn-token-verify');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; }
+    refreshTokenStatus('正在测试连接…', 'warn');
+
+    VH.store.github.verify()
+      .then(function (r) {
+        var cfg = VH.store.github.config();
+        if (r.canPush) {
+          refreshTokenStatus('✓ 连接成功：' + VH.escapeHtml(r.fullName) + '，具备写入权限', 'ok');
+          if (!quietOnSuccess) VH.toast('Token 有效，且有写入权限', 'success');
+        } else {
+          refreshTokenStatus('! 能读取 ' + VH.escapeHtml(r.fullName) +
+            '，但<strong>没有写入权限</strong>。请给 Token 加上 Contents: Read and write', 'warn');
+          VH.toast('Token 缺少写入权限', 'warn');
+        }
+        if (r.defaultBranch && r.defaultBranch !== cfg.branch) {
+          VH.toast('注意：仓库默认分支是 ' + r.defaultBranch + '，而配置里写的是 ' + cfg.branch, 'warn');
+        }
+      })
+      .catch(function (err) {
+        refreshTokenStatus('✗ ' + VH.escapeHtml((err && err.message) || '连接失败'), 'err');
+        VH.toast('测试失败：' + ((err && err.message) || ''), 'error');
+      })
+      .then(function () {
+        if (btn) { btn.disabled = false; btn.textContent = '测试连接'; }
+        renderStatus();
+      });
   }
 
   /* =========================================================
@@ -938,7 +1102,37 @@
     $('#btn-logout').addEventListener('click', function () { VH.auth.logout('index.html'); });
     $('#btn-client').addEventListener('click', function () { global.location.href = 'client.html'; });
     $('#btn-settings').addEventListener('click', openSettings);
-    $('#btn-github').addEventListener('click', openGithubDialog);
+    $('#btn-github').addEventListener('click', publishToGithub);
+
+    // GitHub Token 配置
+    $('#btn-token-save').addEventListener('click', function () {
+      var v = $('#s-token').value.trim();
+      if (!v) { VH.toast('请先粘贴 Token', 'warn'); $('#s-token').focus(); return; }
+      VH.store.github.setToken(v);
+      $('#s-token').value = '';
+      $('#s-token').type = 'password';
+      $('#btn-token-show').textContent = '显示';
+      refreshTokenStatus();
+      renderStatus();
+      VH.toast('Token 已保存到本机浏览器', 'success');
+      verifyToken(true);   // 保存后立即验证一次
+    });
+    $('#btn-token-verify').addEventListener('click', function () { verifyToken(false); });
+    $('#btn-token-clear').addEventListener('click', function () {
+      if (!VH.store.github.hasToken()) { VH.toast('当前没有已保存的 Token', 'info'); return; }
+      if (!VH.confirm('确定清除本机保存的 GitHub Token 吗？\n\n清除后「保存到 GitHub」将不可用，需重新配置。')) return;
+      VH.store.github.clearToken();
+      $('#s-token').value = '';
+      refreshTokenStatus();
+      renderStatus();
+      VH.toast('Token 已清除', 'success');
+    });
+    $('#btn-token-show').addEventListener('click', function () {
+      var i = $('#s-token');
+      var showing = i.type === 'text';
+      i.type = showing ? 'password' : 'text';
+      this.textContent = showing ? '显示' : '隐藏';
+    });
     $('#btn-save-settings').addEventListener('click', saveSettings);
     $('#btn-discard').addEventListener('click', discardDraft);
     $('#btn-clear-all').addEventListener('click', clearAll);
