@@ -213,23 +213,41 @@
   function renderBanner() {
     var html = '';
     var isFile = global.location.protocol === 'file:';
+    var dirty = VH.store.isDirty();
     var ghReady = VH.store.github.enabled();
-    var howTo = ghReady
-      ? '点右上 <strong>「⬆ 保存到 GitHub」</strong> 即可一键发布，Pages 约 1~2 分钟后生效。'
-      : '发布方式两种：① 在 <strong>「⚙ 设置 → GitHub 直推」</strong> 配置 Token，之后点 ' +
-        '<strong>「⬆ 保存到 GitHub」</strong> 一键发布；② 用 <strong>「导出 → 导出发布文件」</strong>，' +
-        '把两个文件上传到仓库 <code>data/</code> 目录（或在仓库目录双击 <code>发布数据.bat</code>）。';
 
-    if (isFile) {
+    // ① 有未发布修改 → 最显眼的发布条，直接把按钮递到眼前
+    if (dirty) {
+      var st = VH.store.stats(db);
+      html += '<div class="publish-bar">' +
+        '<div class="pb-info">' +
+          '<span class="pb-dot"></span>' +
+          '<div class="pb-text">' +
+            '<div class="pb-title">有未发布的修改</div>' +
+            '<div class="pb-sub">' + st.projects + ' 个项目 / ' + st.releases +
+              ' 个版本 · 其他人访问网站仍看到旧数据</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="pb-actions">' +
+          '<button type="button" class="btn btn-success" id="btn-publish-bar">' +
+            (ghReady ? '🚀 立即发布到网站' : '🚀 发布到网站') + '</button>' +
+          '<button type="button" class="btn btn-sm" id="btn-export-bar" title="不配 Token 的备用发布方式">导出文件手动上传</button>' +
+        '</div>' +
+      '</div>';
+    } else if (isFile) {
+      // ② 没有待发布修改，且是本地文件模式 → 轻量提示
       html += '<div class="alert alert-info" style="margin-bottom:12px"><span>💻</span><div>' +
         '<div class="alert-title">本地开发模式（file://）</div>' +
-        '所有修改保存在<strong>本机浏览器草稿</strong>中，刷新不会丢失。' + howTo + '</div></div>';
-    } else if (VH.store.isDirty()) {
-      html += '<div class="alert alert-warn" style="margin-bottom:12px"><span>⚠️</span><div>' +
-        '<div class="alert-title">本机存在未发布的修改</div>' +
-        '其他人访问网站仍看到旧数据。' + howTo + '</div></div>';
+        '数据来自 <code>data/versions.js</code>，修改会存进本机浏览器草稿。' +
+        '发布方式：点 <strong>「🚀 发布到网站」</strong>（需先配一次 Token），' +
+        '或用 <strong>「导出 → 导出发布文件」</strong> 手动上传。</div></div>';
     }
     $('#banner-area').innerHTML = html;
+
+    var pb = $('#btn-publish-bar');
+    if (pb) pb.addEventListener('click', publishToGithub);
+    var eb = $('#btn-export-bar');
+    if (eb) eb.addEventListener('click', function () { exportBundle(); });
 
     var meta = (db && db.meta) || {};
     $('#meta-tip').textContent = meta.updatedAt
@@ -899,10 +917,7 @@
 
   function publishToGithub() {
     if (!VH.store.github.enabled()) {
-      openSettings();
-      var t = $('#s-token');
-      if (t) { t.focus(); }
-      VH.toast('请先配置 GitHub Token', 'warn');
+      showNoTokenDialog();
       return;
     }
 
@@ -956,6 +971,55 @@
         btn.disabled = false;
         btn.innerHTML = original;
       });
+  }
+
+  /** 未配置 Token 时，把两条发布路径讲清楚，而不是只丢一个设置框 */
+  function showNoTokenDialog() {
+    var c = VH.store.github.config();
+    var reason = !VH.store.github.hasToken()
+      ? '还没有配置 GitHub Token，所以暂时无法一键推送。'
+      : 'Token 已存在，但 <code>config/site.js</code> 里 <code>github.enabled</code> 未开启，或 owner / repo 未填写。';
+
+    showInfo('发布到网站 · 需要先完成一次配置',
+      '<div class="alert alert-warn"><span>🔑</span><div>' +
+      '<div class="alert-title">' + reason + '</div>' +
+      'Token 只需配置<strong>一次</strong>，之后每次发布就是点一下按钮。' +
+      '它只保存在<strong>你这台浏览器</strong>的 localStorage 里 —— 不写入仓库、不提交 git、不发给任何第三方。</div></div>' +
+
+      '<div class="detail-section-title" style="margin-top:18px">方式一 · 配置 Token（推荐，之后一键发布）</div>' +
+      '<ol class="guide-steps">' +
+      '<li>浏览器打开 <code>github.com/settings/personal-access-tokens/new</code>' +
+        '<div class="sw-desc">注意网址是 personal-access-tokens，不是 tokens；按钮上不能带 (classic) 字样</div></li>' +
+      '<li><strong>Repository access</strong>：选 <code>Only select repositories</code> → 只勾 <code>' +
+        VH.escapeHtml(c.repo || 'version-hub') + '</code></li>' +
+      '<li><strong>Permissions → Repository permissions</strong>：只把 <code>Contents</code> 设为 ' +
+        '<strong>Read and write</strong>，其余（尤其 <code>Administration</code>、<code>Pages</code>）全部保持 No access</li>' +
+      '<li>点 <strong>Generate token</strong>，复制 <code>github_pat_…</code>（只显示一次）</li>' +
+      '<li>点下面的「去配置 Token」，粘贴 → 保存，看到绿字「✓ 连接成功」即可</li>' +
+      '</ol>' +
+      '<div class="alert alert-danger" style="margin-top:10px"><span>⚠</span><div>' +
+      'Token 只能粘到<strong>网站设置页的输入框</strong>里，不要发给任何人、不要贴进聊天记录。</div></div>' +
+
+      '<div class="detail-section-title" style="margin-top:18px">方式二 · 不配 Token，导出文件上传</div>' +
+      '<ol class="guide-steps">' +
+      '<li>点下面的「导出发布文件」，浏览器会下载 <code>versions.json</code> 和 <code>versions.js</code></li>' +
+      '<li>打开仓库 <code>data</code> 目录 → <code>Add file → Upload files</code> → 拖入这两个文件 → <code>Commit changes</code></li>' +
+      '<li>或者：在本地仓库目录双击 <code>发布数据.bat</code>，它会自动找到下载的文件并提交推送</li>' +
+      '</ol>' +
+
+      '<div class="row-wrap" style="margin-top:18px">' +
+      '<button type="button" class="btn btn-primary" id="go-token">去配置 Token</button>' +
+      '<button type="button" class="btn" id="go-export2">导出发布文件</button>' +
+      '</div>');
+
+    var b1 = $('#go-token'), b2 = $('#go-export2');
+    if (b1) b1.addEventListener('click', function () {
+      closeModal('modal-info');
+      openSettings();
+      var t = $('#s-token');
+      if (t) { t.focus(); if (t.scrollIntoView) t.scrollIntoView({ block: 'center' }); }
+    });
+    if (b2) b2.addEventListener('click', function () { closeModal('modal-info'); exportBundle(); });
   }
 
   function showPublishError(err) {
@@ -1103,6 +1167,8 @@
     $('#btn-client').addEventListener('click', function () { global.location.href = 'client.html'; });
     $('#btn-settings').addEventListener('click', openSettings);
     $('#btn-github').addEventListener('click', publishToGithub);
+    // 表单底部的「发布到网站」—— 让「保存版本 → 发布」两步在同一视野内
+    $('#btn-publish-form').addEventListener('click', publishToGithub);
 
     // GitHub Token 配置
     $('#btn-token-save').addEventListener('click', function () {

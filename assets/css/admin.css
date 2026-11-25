@@ -367,6 +367,55 @@
 }
 #dirty-tip strong { font-weight: 740; }
 
+/* ---------- 发布条（有未发布修改时置顶提示 + 一键发布） ---------- */
+.publish-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  border-radius: var(--r-md);
+  background:
+    linear-gradient(115deg, rgba(45, 212, 167, .15), rgba(34, 211, 238, .10) 55%, transparent 90%),
+    var(--glass);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--success);
+  box-shadow: var(--sh-md), var(--sh-inset), 0 0 28px -14px var(--glow-success);
+  animation: fadeUp .4s var(--ease-out) both;
+}
+.pb-info { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.pb-dot {
+  width: 9px; height: 9px; flex: 0 0 9px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 10px var(--glow-success);
+  animation: pulseGreen 1.9s var(--ease) infinite;
+}
+@keyframes pulseGreen {
+  0%   { box-shadow: 0 0 0 0 var(--glow-success); }
+  70%  { box-shadow: 0 0 0 8px rgba(45, 212, 167, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(45, 212, 167, 0); }
+}
+.pb-text { min-width: 0; }
+.pb-title { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -.012em; }
+.pb-sub {
+  font-size: 11.5px; color: var(--muted); margin-top: 2px;
+  font-family: var(--mono); letter-spacing: .02em;
+}
+.pb-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.pb-actions .btn-success { font-size: 14px; padding: 9px 20px; letter-spacing: .02em; }
+
+@media (max-width: 780px) {
+  .publish-bar { padding: 12px 14px; }
+  .pb-actions { width: 100%; }
+  .pb-actions .btn { flex: 1 1 auto; }
+  .pb-title { font-size: 13.5px; }
+}
+
 /* ---------- 响应式 ---------- */
 @media (max-width: 780px) {
   .stat-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }

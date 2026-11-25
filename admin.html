@@ -7,8 +7,8 @@
 <title>后台管理 · 软件版本中心</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='a' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23f43f5e'/><stop offset='.5' stop-color='%23a855f7'/><stop offset='1' stop-color='%233b82f6'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='url(%23a)'/><text x='16' y='23' font-size='17' font-family='Consolas,Menlo,monospace' font-weight='bold' fill='%23fff' text-anchor='middle'>A</text></svg>">
 <meta name="theme-color" content="#04060e">
-<link rel="stylesheet" href="assets/css/common.css?v=2">
-<link rel="stylesheet" href="assets/css/admin.css?v=2">
+<link rel="stylesheet" href="assets/css/common.css?v=3">
+<link rel="stylesheet" href="assets/css/admin.css?v=3">
 </head>
 <body>
 
@@ -52,7 +52,7 @@
         </div>
       </div>
 
-      <button type="button" class="btn btn-sm" id="btn-github" title="GitHub 直推（M5 阶段启用）">⬆ 保存到 GitHub</button>
+      <button type="button" class="btn btn-sm btn-success" id="btn-github" title="把当前数据一键提交到 GitHub 仓库，1~2 分钟后网站生效">🚀 发布到网站</button>
       <button type="button" class="btn btn-sm btn-ghost" id="theme-toggle">☾ 深色</button>
       <button type="button" class="btn btn-sm" id="btn-client">👁 预览客户端</button>
       <button type="button" class="btn btn-sm btn-ghost" id="btn-settings" title="设置">⚙</button>
@@ -196,8 +196,15 @@
             <button type="submit" form="release-form" class="btn btn-success" id="btn-save">💾 保存版本</button>
             <button type="button" class="btn" id="btn-reset">清空表单</button>
           </div>
-          <div class="field-hint center" style="margin-top:9px">
-            保存后数据先存于本机（草稿），需点「导出 → 导出发布文件」上传仓库才会对其他人可见
+
+          <button type="button" class="btn btn-primary btn-block" id="btn-publish-form"
+                  style="margin-top:10px" title="把当前数据一键提交到 GitHub 仓库">
+            🚀 发布到网站（推送到 GitHub）
+          </button>
+
+          <div class="field-hint center" style="margin-top:10px;line-height:1.8">
+            <strong>① 保存版本</strong> = 存进本机草稿，只有你自己看得到<br>
+            <strong>② 发布到网站</strong> = 推送到 GitHub，约 1~2 分钟后所有人可见
           </div>
         </div>
       </div>
@@ -387,13 +394,13 @@
 
 <div id="toast-box" class="toast-box"></div>
 
-<script src="config/site.js?v=2"></script>
-<script src="data/versions.js?v=2"></script>
-<script src="assets/js/utils.js?v=2"></script>
-<script src="assets/js/markdown.js?v=2"></script>
-<script src="assets/js/csv.js?v=2"></script>
-<script src="assets/js/auth.js?v=2"></script>
-<script src="assets/js/store.js?v=2"></script>
-<script src="assets/js/admin.js?v=2"></script>
+<script src="config/site.js?v=3"></script>
+<script src="data/versions.js?v=3"></script>
+<script src="assets/js/utils.js?v=3"></script>
+<script src="assets/js/markdown.js?v=3"></script>
+<script src="assets/js/csv.js?v=3"></script>
+<script src="assets/js/auth.js?v=3"></script>
+<script src="assets/js/store.js?v=3"></script>
+<script src="assets/js/admin.js?v=3"></script>
 </body>
 </html>
