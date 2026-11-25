@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="软件版本信息中心 · 登录">
+<title>登录 · 软件版本中心</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2322d3ee'/><stop offset='.46' stop-color='%233b82f6'/><stop offset='1' stop-color='%23a855f7'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='url(%23g)'/><text x='16' y='23' font-size='17' font-family='Consolas,Menlo,monospace' font-weight='bold' fill='%23fff' text-anchor='middle'>V</text></svg>">
+<meta name="theme-color" content="#04060e">
+<link rel="stylesheet" href="assets/css/common.css">
+<link rel="stylesheet" href="assets/css/login.css">
+</head>
+<body class="login-page">
+
+<div class="login-shell">
+  <div class="login-card">
+    <div class="login-head">
+      <div class="login-logo">V</div>
+      <h1 class="login-title" data-site-name>软件版本中心</h1>
+      <p class="login-subtitle" data-site-subtitle>SOFTWARE VERSION HUB</p>
+    </div>
+
+    <div id="login-error" class="login-error" role="alert"></div>
+
+    <form class="login-form" id="login-form" autocomplete="on" novalidate>
+      <div class="field">
+        <label class="field-label" for="username">账号</label>
+        <input type="text" id="username" name="username" placeholder="请输入账号"
+               autocomplete="username" autocapitalize="off" spellcheck="false" required>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="password">密码</label>
+        <div class="input-affix">
+          <input type="password" id="password" name="password" placeholder="请输入密码"
+                 autocomplete="current-password" required>
+          <button type="button" class="affix-btn" id="toggle-pass">显示</button>
+        </div>
+      </div>
+
+      <div class="login-options">
+        <label class="checkbox">
+          <input type="checkbox" id="remember"> 记住我（7 天）
+        </label>
+        <span class="small muted" id="lock-tip"></span>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg btn-block" id="login-btn">登 录</button>
+    </form>
+
+    <div class="quick-fill">
+      <button type="button" class="btn btn-sm" data-fill="admin">管理员入口</button>
+      <button type="button" class="btn btn-sm" data-fill="001">客户端入口</button>
+    </div>
+
+    <div class="login-hint">
+      <table>
+        <tr><td>管理员</td><td><code>admin</code> / <code>admin</code> → 后台录入版本信息</td></tr>
+        <tr><td>客户端</td><td><code>001</code> / <code>001</code> → 查看版本表格与下载</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="login-foot">
+    <div data-site-footer>数据存储于 GitHub 仓库 · 由 GitHub Pages 托管</div>
+    <div>
+      <span data-site-login-notice>内部使用站点，请勿外传账号信息。</span>
+      <button type="button" class="theme-link" id="theme-toggle">☾ 深色</button>
+    </div>
+  </div>
+</div>
+
+<script src="config/site.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/login.js"></script>
+</body>
+</html>

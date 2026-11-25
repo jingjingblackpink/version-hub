@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>版本列表 · 软件版本中心</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2322d3ee'/><stop offset='.46' stop-color='%233b82f6'/><stop offset='1' stop-color='%23a855f7'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='url(%23g)'/><text x='16' y='23' font-size='17' font-family='Consolas,Menlo,monospace' font-weight='bold' fill='%23fff' text-anchor='middle'>V</text></svg>">
+<meta name="theme-color" content="#04060e">
+<link rel="stylesheet" href="assets/css/common.css">
+<link rel="stylesheet" href="assets/css/client.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-logo">V</div>
+      <div class="brand-text">
+        <div class="brand-title" id="site-name">软件版本中心</div>
+        <div class="brand-sub" data-site-subtitle>SOFTWARE VERSION HUB</div>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <span id="data-status" class="badge badge-muted" title="数据来源">—</span>
+      <span id="updated-at" class="small muted nowrap"></span>
+      <button type="button" class="btn btn-sm" id="btn-refresh" title="重新加载数据">⟳ 刷新</button>
+      <button type="button" class="btn btn-sm btn-ghost" id="theme-toggle">☾ 深色</button>
+      <button type="button" class="btn btn-sm hide" id="btn-admin">⚙ 进入后台</button>
+      <span id="user-chip" class="small muted nowrap"></span>
+      <button type="button" class="btn btn-sm" id="btn-logout">退出</button>
+    </div>
+  </div>
+</header>
+
+<main class="container client-body">
+
+  <div id="banner-area"></div>
+
+  <div class="summary-bar" id="summary-bar"></div>
+
+  <div class="filter-bar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="search" id="f-keyword" placeholder="搜索项目 / 版本号 / 说明 / 标签…" autocomplete="off">
+    </div>
+
+    <select id="f-channel" title="按发布通道筛选">
+      <option value="">全部通道</option>
+    </select>
+
+    <select id="f-tag" title="按标签筛选">
+      <option value="">全部标签</option>
+    </select>
+
+    <select id="f-project" title="按项目筛选">
+      <option value="">全部项目</option>
+    </select>
+
+    <div class="seg" id="seg-view" role="group" aria-label="视图切换">
+      <button type="button" data-view="all" class="active">全部版本</button>
+      <button type="button" data-view="latest">只看最新</button>
+    </div>
+
+    <label class="checkbox nowrap">
+      <input type="checkbox" id="f-archived"> 显示已归档
+    </label>
+
+    <span class="filter-count" id="filter-count"></span>
+  </div>
+
+  <!-- 按项目分组：每个项目一个面板，组内各版本分行显示 -->
+  <div id="groups" class="group-list"></div>
+
+  <div id="table-empty" class="panel hide"></div>
+
+  <p class="small muted center" style="margin-top:22px" data-site-footer></p>
+</main>
+
+<div id="toast-box" class="toast-box"></div>
+
+<script src="config/site.js"></script>
+<script src="data/versions.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/markdown.js"></script>
+<script src="assets/js/csv.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/client.js"></script>
+</body>
+</html>

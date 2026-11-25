@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>后台管理 · 软件版本中心</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='a' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23f43f5e'/><stop offset='.5' stop-color='%23a855f7'/><stop offset='1' stop-color='%233b82f6'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='url(%23a)'/><text x='16' y='23' font-size='17' font-family='Consolas,Menlo,monospace' font-weight='bold' fill='%23fff' text-anchor='middle'>A</text></svg>">
+<meta name="theme-color" content="#04060e">
+<link rel="stylesheet" href="assets/css/common.css">
+<link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-logo">V</div>
+      <div class="brand-text">
+        <div class="brand-title" id="site-name">软件版本中心</div>
+        <div class="brand-sub">后台管理 · ADMIN</div>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <span id="data-status" class="badge badge-muted" title="数据来源">—</span>
+
+      <button type="button" class="btn btn-sm btn-primary" id="btn-new">＋ 新版本</button>
+
+      <div class="dropdown">
+        <button type="button" class="btn btn-sm" id="btn-import-menu">⇪ 导入 ▾</button>
+        <div class="dropdown-menu" id="menu-import" hidden>
+          <button type="button" data-act="import-json">导入 JSON
+            <span class="menu-desc">从 versions.json 恢复整库</span></button>
+          <button type="button" data-act="import-csv">导入 CSV
+            <span class="menu-desc">按模板批量导入版本（Excel 可编辑）</span></button>
+          <hr>
+          <button type="button" data-act="csv-template">下载 CSV 模板</button>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button type="button" class="btn btn-sm" id="btn-export-menu">⇩ 导出 ▾</button>
+        <div class="dropdown-menu" id="menu-export" hidden>
+          <button type="button" data-act="export-bundle">导出发布文件（JSON + JS）
+            <span class="menu-desc">★ 上传到仓库即可完成发布</span></button>
+          <button type="button" data-act="export-json">仅导出 versions.json</button>
+          <button type="button" data-act="export-js">仅导出 versions.js</button>
+          <button type="button" data-act="export-csv">导出 CSV 表格</button>
+          <hr>
+          <button type="button" data-act="publish-guide">如何发布到网站？</button>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-sm" id="btn-github" title="GitHub 直推（M5 阶段启用）">⬆ 保存到 GitHub</button>
+      <button type="button" class="btn btn-sm btn-ghost" id="theme-toggle">☾ 深色</button>
+      <button type="button" class="btn btn-sm" id="btn-client">👁 预览客户端</button>
+      <button type="button" class="btn btn-sm btn-ghost" id="btn-settings" title="设置">⚙</button>
+      <button type="button" class="btn btn-sm" id="btn-logout">退出</button>
+    </div>
+  </div>
+</header>
+
+<main class="container admin-body">
+
+  <div id="banner-area"></div>
+
+  <div class="stat-row" id="stat-row"></div>
+
+  <div class="admin-grid">
+
+    <!-- ============ 左：录入表单 ============ -->
+    <div class="col-form">
+      <div class="panel">
+        <div class="panel-head">
+          <h3 class="panel-title form-title">
+            <span id="form-mode-icon">✏️</span>
+            <span id="form-mode-text">新增版本</span>
+            <span class="badge badge-latest mode-tag hide" id="form-mode-badge">编辑中</span>
+          </h3>
+          <button type="button" class="btn btn-sm btn-ghost hide" id="btn-cancel-edit">取消编辑</button>
+        </div>
+
+        <div class="panel-body">
+          <form id="release-form" novalidate>
+
+            <div class="field hide" id="field-project">
+              <label class="field-label" for="f-project">项目名称 <span class="req">*</span></label>
+              <input type="text" id="f-project" list="project-list" placeholder="多项目模式下填写">
+              <datalist id="project-list"></datalist>
+            </div>
+
+            <div class="field" id="field-version">
+              <label class="field-label" for="f-version">版本号 <span class="req">*</span></label>
+              <div class="version-input-row">
+                <input type="text" id="f-version" placeholder="如 v1.2.0" autocomplete="off">
+                <button type="button" class="btn" id="btn-bump" title="基于最新版本自动 +1">自动 +1</button>
+              </div>
+              <div class="field-hint" id="version-hint">建议使用 v主.次.修订 格式，如 v1.2.0</div>
+              <div class="field-error">版本号不能为空，且同一项目内不可重复</div>
+            </div>
+
+            <div class="field" id="field-date">
+              <label class="field-label" for="f-date">
+                <span id="f-date-label">上传日期时间</span> <span class="req">*</span>
+              </label>
+              <input type="datetime-local" id="f-date" step="1">
+              <div class="field-hint" id="date-hint">默认填入当前时间（精确到秒），可手动修改；不能晚于此刻</div>
+              <div class="field-error">请填写有效的日期时间（不能晚于当前时刻）</div>
+            </div>
+
+            <div class="field-grid">
+              <div class="field" id="field-screen">
+                <label class="field-label" for="f-screen">串口屏版本</label>
+                <input type="text" id="f-screen" placeholder="如 DGUS v2.3.1，无串口屏可留空" autocomplete="off">
+              </div>
+
+              <div class="field">
+                <label class="field-label" for="f-channel">发布通道</label>
+                <select id="f-channel"></select>
+              </div>
+
+              <div class="field">
+                <label class="field-label" for="f-status">状态</label>
+                <select id="f-status"></select>
+              </div>
+
+              <div class="field">
+                <label class="field-label" for="f-tags">标签</label>
+                <input type="text" id="f-tags" placeholder="用 ; 分隔，如 STM32F407;FreeRTOS">
+              </div>
+            </div>
+
+            <div class="field field-full">
+              <div class="readme-toolbar">
+                <label class="field-label" style="margin:0" for="f-readme">README / 版本说明</label>
+                <span class="grow"></span>
+                <button type="button" class="md-insert-btn" data-md="h">## 标题</button>
+                <button type="button" class="md-insert-btn" data-md="li">- 列表</button>
+                <button type="button" class="md-insert-btn" data-md="ol">1. 步骤</button>
+                <button type="button" class="md-insert-btn" data-md="code">`代码`</button>
+                <button type="button" class="btn btn-sm btn-ghost" id="btn-preview">预览</button>
+              </div>
+              <textarea id="f-readme" class="mono" placeholder="支持 Markdown 语法。客户端会渲染成排版好的说明文档。&#10;&#10;## 本次更新&#10;- 新增 xxx&#10;- 修复 xxx&#10;&#10;## 烧录说明&#10;1. 第一步&#10;2. 第二步"></textarea>
+              <div class="field-hint">小技巧：以 <code>- </code> 开头的条目会自动提取为「更新日志」显示在客户端</div>
+              <div class="preview-box md hide" id="readme-preview"></div>
+            </div>
+
+            <div class="field field-full">
+              <label class="field-label" for="f-url">下载链接（百度网盘） <span class="req">*</span></label>
+              <input type="url" id="f-url" placeholder="https://pan.baidu.com/s/xxxxxxxx" autocomplete="off">
+              <div class="field-hint" id="url-hint">在网盘中「分享」文件后，复制分享链接粘贴到这里</div>
+              <div class="field-error">请填写下载链接</div>
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label class="field-label" for="f-password">提取码 <span class="req">*</span></label>
+                <input type="text" id="f-password" maxlength="8" placeholder="如 ab12" autocomplete="off">
+                <div class="field-error">填写了下载链接时必须填写提取码</div>
+              </div>
+
+              <div class="field">
+                <label class="field-label" for="f-filesize">文件大小</label>
+                <input type="text" id="f-filesize" placeholder="如 486 KB">
+              </div>
+
+              <div class="field field-full">
+                <label class="field-label" for="f-filename">文件名</label>
+                <input type="text" id="f-filename" placeholder="如 jinshuyu_v1.2.0.bin">
+              </div>
+
+              <div class="field field-full hide" id="field-sha">
+                <label class="field-label" for="f-sha256">SHA256 校验值</label>
+                <input type="text" id="f-sha256" class="mono" placeholder="选填，供客户校验下载完整性">
+              </div>
+
+              <div class="field field-full hide" id="field-mirror">
+                <label class="field-label" for="f-mirror">镜像下载地址</label>
+                <input type="url" id="f-mirror" placeholder="选填，备用下载源">
+              </div>
+            </div>
+
+            <div class="field field-full">
+              <label class="field-label" for="f-note">
+                内部备注 <span class="badge badge-admin">仅管理员可见</span>
+              </label>
+              <textarea id="f-note" style="min-height:56px" placeholder="不会显示在客户端页面上"></textarea>
+            </div>
+
+          </form>
+        </div>
+
+        <div class="panel-foot">
+          <div class="form-actions">
+            <button type="submit" form="release-form" class="btn btn-success" id="btn-save">💾 保存版本</button>
+            <button type="button" class="btn" id="btn-reset">清空表单</button>
+          </div>
+          <div class="field-hint center" style="margin-top:9px">
+            保存后数据先存于本机（草稿），需点「导出 → 导出发布文件」上传仓库才会对其他人可见
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 右：数据列表 ============ -->
+    <div class="col-list">
+      <div class="panel">
+        <div class="list-toolbar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="search" id="l-keyword" placeholder="搜索版本号 / 说明 / 文件名…" autocomplete="off">
+          </div>
+          <select id="l-channel" title="按通道筛选"><option value="">全部通道</option></select>
+          <select id="l-status" title="按状态筛选"><option value="">全部状态</option></select>
+          <select id="l-project" class="hide" title="按项目筛选"><option value="">全部项目</option></select>
+          <span class="filter-count small muted nowrap" id="list-count"></span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table admin-table">
+            <!-- 表头由 admin.js 的 adminColumns() 动态生成，与数据列同源，结构上不可能错位 -->
+            <thead id="admin-thead"></thead>
+            <tbody id="admin-tbody"></tbody>
+          </table>
+        </div>
+        <div id="admin-empty" class="hide"></div>
+      </div>
+
+      <div class="row-between" style="margin-top:12px">
+        <span class="small muted" id="dirty-tip"></span>
+        <span class="small muted" id="meta-tip"></span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ 设置弹窗 ============ -->
+<div class="modal-mask" id="modal-settings" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h3 class="modal-title">⚙ 站点设置</h3>
+      <button type="button" class="modal-close" data-close="modal-settings">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info" style="margin-bottom:16px">
+        <span>ℹ️</span>
+        <div>以下设置修改后仅保存在<strong>本机浏览器</strong>，用于实时预览效果。
+        要让设置对所有访问者生效，需同步修改仓库中的 <code>config/site.js</code> 并上传。</div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-group-title">站点信息</div>
+        <div class="field">
+          <label class="field-label" for="s-name">站点名称</label>
+          <input type="text" id="s-name">
+        </div>
+        <div class="field">
+          <label class="field-label" for="s-subtitle">副标题</label>
+          <input type="text" id="s-subtitle">
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-group-title">默认项目</div>
+        <div class="field">
+          <label class="field-label" for="s-pname">项目名称</label>
+          <input type="text" id="s-pname">
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label class="field-label" for="s-pid">项目编号</label>
+            <input type="text" id="s-pid" class="mono">
+          </div>
+          <div class="field">
+            <label class="field-label" for="s-pcat">分类</label>
+            <input type="text" id="s-pcat">
+          </div>
+        </div>
+        <div class="switch-row">
+          <div class="sw-text">启用多项目模式
+            <div class="sw-desc">开启后：表单显示「项目名称」字段，表格与客户端显示项目列并解锁项目筛选。数据结构不变。</div>
+          </div>
+          <label class="switch"><input type="checkbox" id="s-multi"><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-group-title">显示选项</div>
+        <div class="switch-row">
+          <div class="sw-text">显示「串口屏版本」字段<div class="sw-desc">记录 DGUS 串口屏的工程/固件版本；没有串口屏的项目可以关掉，表单与两个页面的表格列会一起隐藏</div></div>
+          <label class="switch"><input type="checkbox" id="s-screen"><span class="slider"></span></label>
+        </div>
+        <div class="switch-row">
+          <div class="sw-text">显示 SHA256 字段<div class="sw-desc">嵌入式固件建议开启，方便客户校验完整性</div></div>
+          <label class="switch"><input type="checkbox" id="s-sha"><span class="slider"></span></label>
+        </div>
+        <div class="switch-row">
+          <div class="sw-text">显示镜像地址字段<div class="sw-desc">提供备用下载源时开启</div></div>
+          <label class="switch"><input type="checkbox" id="s-mirror"><span class="slider"></span></label>
+        </div>
+        <div class="switch-row">
+          <div class="sw-text">强制要求百度网盘域名<div class="sw-desc">开启后，下载链接必须是 pan.baidu.com 开头才能保存</div></div>
+          <label class="switch"><input type="checkbox" id="s-baidu"><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-group-title danger-zone" style="border:none;padding:0;margin:0 0 10px">
+          <div class="dz-title">⚠ 危险操作</div>
+        </div>
+        <div class="danger-zone" style="border:none;padding:0;background:none">
+          <div class="row-wrap">
+            <button type="button" class="btn btn-sm" id="btn-discard">丢弃本机草稿</button>
+            <button type="button" class="btn btn-sm btn-danger" id="btn-clear-all">清空全部数据</button>
+          </div>
+          <div class="sw-desc" style="margin-top:8px">
+            「丢弃草稿」= 恢复到仓库/文件中的数据；「清空全部数据」会删除所有版本记录，操作前请先导出备份。
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn" data-close="modal-settings">取消</button>
+      <button type="button" class="btn btn-primary" id="btn-save-settings">保存设置</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 通用提示弹窗 ============ -->
+<div class="modal-mask" id="modal-info" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h3 class="modal-title" id="info-title">提示</h3>
+      <button type="button" class="modal-close" data-close="modal-info">×</button>
+    </div>
+    <div class="modal-body" id="info-body"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-primary" data-close="modal-info">我知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 隐藏的文件选择器 -->
+<input type="file" id="file-json" accept=".json,application/json" class="hide">
+<input type="file" id="file-csv" accept=".csv,text/csv" class="hide">
+
+<div id="toast-box" class="toast-box"></div>
+
+<script src="config/site.js"></script>
+<script src="data/versions.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/markdown.js"></script>
+<script src="assets/js/csv.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>

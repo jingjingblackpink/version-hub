@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>页面未找到 · 软件版本中心</title>
+<meta name="theme-color" content="#04060e">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2322d3ee'/><stop offset='.46' stop-color='%233b82f6'/><stop offset='1' stop-color='%23a855f7'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='url(%23g)'/><text x='16' y='23' font-size='17' font-family='Consolas,Menlo,monospace' font-weight='bold' fill='%23fff' text-anchor='middle'>V</text></svg>">
+<style>
+  /* 内联样式：404 可能在任意路径深度被触发，不依赖外部 CSS */
+  :root {
+    color-scheme: dark;
+    --bg-0:#04060e; --bg-1:#080d1a;
+    --glass:rgba(13,21,39,.88);
+    --border:rgba(94,234,255,.16);
+    --border-2:rgba(150,190,230,.10);
+    --text:#dcecff; --muted:#6a8199;
+    --accent:#22d3ee; --accent-2:#3b82f6; --accent-3:#a855f7;
+    --grad-btn:linear-gradient(115deg,#06b6d4 0%,#3b82f6 100%); --on-grad:#04121a;
+    --sheen:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);
+    --grid:rgba(94,234,255,.055);
+    --scan:rgba(94,234,255,.045);
+    --mono:"SFMono-Regular","JetBrains Mono",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      color-scheme: light;
+      --bg-0:#eef3fb; --bg-1:#f8fbff;
+      --glass:rgba(255,255,255,.88);
+      --border:rgba(8,145,178,.22);
+      --border-2:rgba(9,40,66,.10);
+      --text:#08172a; --muted:#6d8299;
+      --accent:#0b6a8a;
+      --grad-btn:linear-gradient(115deg,#0e7490 0%,#1d4ed8 100%); --on-grad:#ffffff;
+      --sheen:linear-gradient(100deg,transparent,rgba(2,6,23,.34),transparent);
+      --grid:rgba(8,145,178,.075);
+      --scan:rgba(8,145,178,.05);
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    margin: 0; min-height: 100vh; padding: 26px 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Microsoft YaHei", "微软雅黑", sans-serif;
+    background: radial-gradient(ellipse 120% 80% at 50% -10%, var(--bg-1), transparent 70%), var(--bg-0);
+    color: var(--text);
+    letter-spacing: .012em;
+    -webkit-font-smoothing: antialiased;
+    position: relative; overflow-x: hidden;
+  }
+  /* HUD 网格 */
+  body::before {
+    content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+    background-image:
+      linear-gradient(to right, var(--grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+    background-size:46px 46px;
+    -webkit-mask-image: radial-gradient(ellipse 100% 82% at 50% 0%, #000 12%, transparent 82%);
+    mask-image: radial-gradient(ellipse 100% 82% at 50% 0%, #000 12%, transparent 82%);
+  }
+  /* 能量场 + 扫描线 */
+  body::after {
+    content:""; position:fixed; inset:-25vmax; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(34vmax 34vmax at 16% 8%,  rgba(34,211,238,.20), transparent 62%),
+      radial-gradient(30vmax 30vmax at 86% 6%,  rgba(59,130,246,.18), transparent 60%),
+      radial-gradient(34vmax 34vmax at 78% 90%, rgba(168,85,247,.16), transparent 62%),
+      repeating-linear-gradient(0deg, var(--scan) 0 1px, transparent 1px 4px);
+    will-change:transform;
+    animation: aurora 28s cubic-bezier(.22,.61,.36,1) infinite alternate;
+  }
+  @keyframes aurora {
+    0%   { transform: translate3d(0,0,0) scale(1); }
+    50%  { transform: translate3d(-2.5vmax,2vmax,0) scale(1.06); }
+    100% { transform: translate3d(2vmax,-2.5vmax,0) scale(1.02); }
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes scanSweep { 0% { transform: translateX(-110%); } 100% { transform: translateX(290%); } }
+  @keyframes pulse { 0%,100% { box-shadow:0 0 14px -5px rgba(34,211,238,.6); } 50% { box-shadow:0 0 24px -2px rgba(34,211,238,.75); } }
+
+  .card {
+    position: relative;
+    width: 100%; max-width: 480px;
+    text-align: center;
+    padding: 42px 34px 34px;
+    border-radius: 15px;
+    background:
+      linear-gradient(115deg,#22d3ee,#3b82f6 46%,#a855f7) top / 100% 3px no-repeat,
+      radial-gradient(130% 62% at 50% -12%, rgba(34,211,238,.13), transparent 72%),
+      var(--glass);
+    -webkit-backdrop-filter: saturate(170%) blur(18px);
+    backdrop-filter: saturate(170%) blur(18px);
+    border: 1px solid var(--border);
+    box-shadow: 0 28px 64px -18px rgba(0,0,0,.8), inset 0 1px 0 rgba(160,220,255,.09),
+                0 0 46px -18px rgba(34,211,238,.55);
+    overflow: hidden;
+    animation: fadeUp .6s cubic-bezier(.16,1,.3,1) both;
+  }
+  /* HUD 角标 */
+  .card i {
+    position: absolute; width: 18px; height: 18px; pointer-events: none;
+    opacity: .6;
+  }
+  .card i.tl { top:8px; left:8px;  border-top:1.5px solid var(--accent); border-left:1.5px solid var(--accent); border-top-left-radius:3px; }
+  .card i.br { bottom:8px; right:8px; border-bottom:1.5px solid var(--accent); border-right:1.5px solid var(--accent); border-bottom-right-radius:3px; }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9.5px; font-weight: 700;
+    letter-spacing: .32em; text-transform: uppercase;
+    color: var(--accent); opacity: .8;
+    margin-bottom: 14px;
+  }
+
+  .code {
+    font-family: var(--mono);
+    font-size: 92px; font-weight: 800; line-height: 1; letter-spacing: -.06em;
+    background: linear-gradient(115deg,#22d3ee 0%,#3b82f6 46%,#a855f7 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    filter: drop-shadow(0 0 26px rgba(34,211,238,.4));
+    margin-bottom: 4px;
+    animation: pulse 3.4s ease-in-out infinite;
+    border-radius: 8px;
+  }
+  h1 { font-size: 18px; font-weight: 700; margin: 0 0 12px; letter-spacing: -.02em; }
+  p { color: var(--muted); font-size: 13px; margin: 0 0 26px; line-height: 1.95; }
+  code {
+    font-family: var(--mono); font-size: 11.5px; font-weight: 650;
+    background: rgba(34,211,238,.10); border: 1px solid rgba(34,211,238,.24);
+    padding: 1.5px 6px; border-radius: 4px; color: var(--accent);
+  }
+  a.btn {
+    position: relative;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 28px;
+    background: var(--grad-btn);
+    background-size: 160% 100%;
+    color: var(--on-grad); text-decoration: none;
+    border-radius: 11px; font-size: 13px; font-weight: 700;
+    font-family: var(--mono); letter-spacing: .1em; text-transform: uppercase;
+    box-shadow: 0 0 22px -4px rgba(34,211,238,.55), inset 0 1px 0 rgba(255,255,255,.35);
+    overflow: hidden;
+    isolation: isolate;  /* 让 ::after 扫光可用 z-index:-1 压在文字下方 */
+    transition: transform .18s cubic-bezier(.22,.61,.36,1), box-shadow .22s, background-position .4s;
+  }
+  a.btn::after {
+    content:""; position:absolute; top:0; left:-120%;
+    width:55%; height:100%;
+    background: var(--sheen);
+    transform: skewX(-18deg);
+    transition: left .62s cubic-bezier(.16,1,.3,1);
+    z-index: -1;            /* 置于文字下方，避免与白字同色而消失 */
+    pointer-events: none;
+  }
+  a.btn:hover { transform: translateY(-2px); background-position: 100% 0;
+    box-shadow: 0 0 30px -4px rgba(34,211,238,.75), inset 0 1px 0 rgba(255,255,255,.35); }
+  a.btn:hover::after { left: 155%; }
+  a.btn:active { transform: translateY(0) scale(.985); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+  }
+  @media (max-width: 440px) {
+    .card { padding: 34px 20px 26px; border-radius: 13px; }
+    .code { font-size: 72px; }
+    h1 { font-size: 16.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <i class="tl"></i><i class="br"></i>
+  <div class="tag">// Signal Lost</div>
+  <div class="code">404</div>
+  <h1>页面不存在或已被移动</h1>
+  <p>
+    请确认访问地址是否正确。<br>
+    若这是刚部署的站点，可能是 GitHub Pages 仍在构建中，请 1~2 分钟后重试。<br>
+    正确入口通常是 <code>index.html</code>（登录页）。
+  </p>
+  <a class="btn" href="index.html">← 返回登录页</a>
+</div>
+</body>
+</html>

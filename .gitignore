@@ -1,0 +1,13 @@
+# 系统与编辑器垃圾文件
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.tmp
+
+# 依赖（本项目无需构建，仅作保险）
+node_modules/
+
+# 本机导出的临时数据文件（正式数据在 data/ 下，需提交）
+/downloads/
+*.bak
