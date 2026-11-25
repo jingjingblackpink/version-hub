@@ -4,6 +4,37 @@
 
 ---
 
+## 快速访问
+
+| 项目 | 内容 |
+|---|---|
+| **网站地址** | https://jingjingblackpink.github.io/version-hub/ |
+| **管理后台** | 账号 `admin` ／ 密码 `admin` → 录入与发布 |
+| **客户端（只读）** | 账号 `001` ／ 密码 `001` → 按项目分组查看与下载 |
+| **GitHub 仓库** | https://github.com/jingjingblackpink/version-hub |
+| **提交历史** | https://github.com/jingjingblackpink/version-hub/commits/main |
+| **★ 数据文件在线编辑（权威）** | https://github.com/jingjingblackpink/version-hub/edit/main/data/versions.json |
+| 数据文件在线查看 | https://github.com/jingjingblackpink/version-hub/blob/main/data/versions.json |
+| 本地镜像文件（仅供 `file://` 预览） | https://github.com/jingjingblackpink/version-hub/blob/main/data/versions.js |
+| Pages 部署设置 | https://github.com/jingjingblackpink/version-hub/settings/pages |
+| Token 管理（细粒度） | https://github.com/settings/personal-access-tokens |
+
+> ### ⚠️ 在线改数据时，认准 `versions.json`
+>
+> | 文件 | 网站读不读 | 能不能只改它 |
+> |---|---|---|
+> | **`data/versions.json`** | ✅ **线上就是读这个**（`fetch`） | ✅ 改它就生效 |
+> | `data/versions.js` | ❌ 线上**不读**，只在本地双击（`file://`）时兜底 | ❌ **只改它网站不会有任何变化** |
+>
+> 网页直改 `versions.json` 后，`versions.js` 会暂时落后（不影响线上，只影响本地双击预览）。
+> 下次从后台「🚀 发布到网站」时程序会同时重写两个文件，自动恢复一致。
+>
+> **优先级**：后台一键发布（两文件自动同步）＞ 网页直改 `versions.json`（应急）＞ 只改 `versions.js`（❌ 无效）
+
+> 🔐 **本仓库是公开的**，上表账号密码任何人查看源码都能看到。正式启用前请修改 `config/site.js` 里的 `accounts`。
+
+---
+
 ## 一、快速开始（本地，30 秒）
 
 ### 方式 1：直接双击（最简单）
