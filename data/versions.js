@@ -7,7 +7,7 @@
 window.__SITE_DATA__ = {
   "meta": {
     "schemaVersion": 1,
-    "updatedAt": "2026-11-25T18:05:14+08:00",
+    "updatedAt": "2026-11-25T18:08:16+08:00",
     "updatedBy": "admin",
     "siteName": "泉心泉意 · 软件版本中心"
   },
@@ -167,6 +167,36 @@ window.__SITE_DATA__ = {
           },
           "internalNote": "",
           "id": "rel_mwvyjj2u_8jgstw"
+        }
+      ]
+    },
+    {
+      "id": "p_mix135",
+      "name": "涡旋仪V5-PRO",
+      "category": "嵌入式固件",
+      "owner": "",
+      "archived": false,
+      "releases": [
+        {
+          "version": "V2.5",
+          "screenVersion": "",
+          "date": "2026-11-25T18:05:14",
+          "channel": "stable",
+          "status": "normal",
+          "tags": [],
+          "readme": "26/5/19\n1，中文版本增加操作手册二维码 \n2，英文版本增加操作手册二维码 \n3，软件版本号：V2.5",
+          "changelog": [],
+          "download": {
+            "type": "baidupan",
+            "url": "https://pan.baidu.com/s/1bdsc3KW5K7cx_TpKwqOLGQ",
+            "password": "ifpf",
+            "fileName": "YQ-2401_05_涡旋振荡仪软件-V2.3-20260720",
+            "fileSize": "6.91MB",
+            "sha256": "",
+            "mirror": ""
+          },
+          "internalNote": "",
+          "id": "rel_mwvynfsh_hu988x"
         }
       ]
     }
