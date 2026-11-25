@@ -7,7 +7,7 @@
 window.__SITE_DATA__ = {
   "meta": {
     "schemaVersion": 1,
-    "updatedAt": "2026-11-25T17:52:31+08:00",
+    "updatedAt": "2026-11-25T17:56:00+08:00",
     "updatedBy": "admin",
     "siteName": "泉心泉意 · 软件版本中心"
   },
@@ -77,6 +77,36 @@ window.__SITE_DATA__ = {
           },
           "internalNote": "",
           "id": "rel_mwvy369t_xpj702"
+        }
+      ]
+    },
+    {
+      "id": "p_vcx3wf",
+      "name": "金属浴B5-PRO软件",
+      "category": "嵌入式固件",
+      "owner": "",
+      "archived": false,
+      "releases": [
+        {
+          "version": "V1.1.2",
+          "screenVersion": "V1.0.7",
+          "date": "2026-11-25T17:53:42",
+          "channel": "stable",
+          "status": "normal",
+          "tags": [],
+          "readme": "26/11/11 新UI（PID原算法）1.06 heatonly_261105\n单片机版本：V1.1.2，串口屏版本：V1.0.7\n1，优化启动耗时，减小蜂鸣器鸣叫时长",
+          "changelog": [],
+          "download": {
+            "type": "baidupan",
+            "url": "https://pan.baidu.com/s/1F0O8cku_H7rrUKN4lj-vrQ",
+            "password": "afui",
+            "fileName": "金属浴B5-PRO软件-V1.1.2-261111",
+            "fileSize": "30.47MB",
+            "sha256": "",
+            "mirror": ""
+          },
+          "internalNote": "",
+          "id": "rel_mwvy7ng2_bemrcd"
         }
       ]
     }
