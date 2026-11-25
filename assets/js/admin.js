@@ -924,20 +924,71 @@
     var data = VH.store.getDb();
     if (!data) { VH.toast('没有可发布的数据', 'error'); return; }
 
+    var btns = publishButtons();
+    setPublishBusy(btns, true, '检查远端…');
+
+    // ★ 发布前先读仓库现状做对比：防止「清空全部数据」后误点发布，把网站洗空
+    VH.store.github.remoteStats()
+      .catch(function () { return { ok: false, projects: 0, releases: 0 }; })
+      .then(function (rs) {
+        setPublishBusy(btns, false);
+        if (!confirmPublish(data, rs)) return;
+        doPublish(data, btns);
+      });
+  }
+
+  function publishButtons() {
+    return ['#btn-github', '#btn-publish-form', '#btn-publish-bar']
+      .map(function (s) { return $(s); })
+      .filter(Boolean);
+  }
+
+  function setPublishBusy(btns, busy, label) {
+    btns.forEach(function (b) {
+      if (busy) {
+        if (!b.dataset.origHtml) b.dataset.origHtml = b.innerHTML;
+        b.disabled = true;
+        b.innerHTML = '<span class="spinner"></span> ' + (label || '发布中…');
+      } else {
+        b.disabled = false;
+        if (b.dataset.origHtml) { b.innerHTML = b.dataset.origHtml; delete b.dataset.origHtml; }
+      }
+    });
+  }
+
+  /** 组装确认对话框；版本数变少或数据清空时要求二次强确认 */
+  function confirmPublish(data, rs) {
     var st = VH.store.stats(data);
     var paths = VH.store.github.config().paths;
-    if (!VH.confirm(
-      '确定发布到 GitHub 吗？\n\n' +
-      '仓库：' + ghRepoLabel() + '\n' +
-      '内容：' + st.projects + ' 个项目 / ' + st.releases + ' 个版本\n' +
-      '将更新：' + paths.join('、') + '\n\n' +
-      '发布后 GitHub Pages 需 1~2 分钟生效。'
-    )) return;
 
-    var btn = $('#btn-github');
-    var original = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> 发布中…';
+    var msg = '确定发布到 GitHub 吗？\n\n' +
+      '仓库：' + ghRepoLabel() + '\n' +
+      '即将发布：' + st.projects + ' 个项目 / ' + st.releases + ' 个版本\n' +
+      ((rs && rs.ok) ? '仓库现有：' + rs.projects + ' 个项目 / ' + rs.releases + ' 个版本\n' : '') +
+      '将更新：' + paths.join('、') + '\n\n' +
+      '发布后 GitHub Pages 需 1~2 分钟生效。';
+
+    var lost = (rs && rs.ok) ? (rs.releases - st.releases) : 0;
+
+    if (lost > 0) {
+      msg += '\n\n⚠️⚠️ 警告：这次发布会让网站少掉 ' + lost + ' 个版本！\n' +
+        '这些版本会立刻从客户端页面消失（事后虽可从 Git 提交历史找回，但很麻烦）。\n' +
+        '如果你只是想修改其中某一条，请先点顶栏「⟳ 刷新」重新加载最新数据再编辑。';
+      if (!VH.confirm(msg)) return false;
+      return VH.confirm('再次确认：真的要删掉线上 ' + lost + ' 个版本吗？\n\n点「取消」放弃发布，什么都不会改变。');
+    }
+
+    if (st.releases === 0) {
+      msg += '\n\n⚠️ 你即将发布一份【空数据】，客户端会显示「暂无版本数据」。';
+      if (!VH.confirm(msg)) return false;
+      return VH.confirm('再次确认：真的要把网站清空吗？\n\n点「取消」放弃发布，什么都不会改变。');
+    }
+
+    return VH.confirm(msg);
+  }
+
+  function doPublish(data, btns) {
+    setPublishBusy(btns, true, '发布中…');
 
     VH.store.github.publish(data, buildCommitMessage(data))
       .then(function (res) {
@@ -968,8 +1019,7 @@
         showPublishError(err);
       })
       .then(function () {
-        btn.disabled = false;
-        btn.innerHTML = original;
+        setPublishBusy(btns, false);
       });
   }
 

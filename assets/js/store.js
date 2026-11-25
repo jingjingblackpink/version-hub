@@ -396,6 +396,17 @@
     return e;
   }
 
+  /** Base64 → UTF-8 字符串（GitHub Contents API 返回的是 base64） */
+  function base64ToUtf8(b64) {
+    var bin = global.atob(String(b64 || '').replace(/\s/g, ''));
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    if (typeof global.TextDecoder === 'function') {
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+    return decodeURIComponent(escape(bin));   // 老浏览器兜底
+  }
+
   function ghNetworkError(cause) {
     var e = new Error('网络请求失败：' + ((cause && cause.message) || cause));
     e.kind = 'network';
@@ -485,6 +496,28 @@
           pagesUrl: 'https://' + c.owner + '.github.io/' + c.repo + '/'
         };
       });
+    },
+
+    /**
+     * 读取仓库当前数据的项目数 / 版本数。
+     * 用于发布前对比：若即将发布的数量比远端少，说明会删掉线上数据，
+     * 必须额外强确认 —— 防止「清空全部数据」后误点发布把网站洗空。
+     * 读取失败不阻断发布，只返回 ok:false。
+     */
+    remoteStats: function () {
+      var c = ghConfig();
+      return ghRequest('/contents/' + c.jsonPath + '?ref=' + encodeURIComponent(c.branch), 'GET')
+        .then(function (f) {
+          var db = null;
+          try { db = JSON.parse(base64ToUtf8((f && f.content) || '')); } catch (e) { db = null; }
+          var projects = 0, releases = 0;
+          if (db && Array.isArray(db.projects)) {
+            projects = db.projects.length;
+            db.projects.forEach(function (p) { releases += ((p && p.releases) || []).length; });
+          }
+          return { ok: !!db, projects: projects, releases: releases, db: db };
+        })
+        .catch(function () { return { ok: false, projects: 0, releases: 0, db: null }; });
     },
 
     /**
