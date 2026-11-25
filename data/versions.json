@@ -1,7 +1,7 @@
 {
   "meta": {
     "schemaVersion": 1,
-    "updatedAt": "2026-11-25T17:56:00+08:00",
+    "updatedAt": "2026-11-25T17:57:13+08:00",
     "updatedBy": "admin",
     "siteName": "泉心泉意 · 软件版本中心"
   },
@@ -64,7 +64,7 @@
             "type": "baidupan",
             "url": "https://pan.baidu.com/s/1YtIsHUPQHjVcG1VzacV12A",
             "password": "6a66",
-            "fileName": "",
+            "fileName": "金属浴B5-MAX软件-V3.3.9-261105-英文en",
             "fileSize": "49.72MB",
             "sha256": "",
             "mirror": ""
