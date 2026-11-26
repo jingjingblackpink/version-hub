@@ -1,7 +1,7 @@
 {
   "meta": {
     "schemaVersion": 1,
-    "updatedAt": "2026-11-26T15:55:57+08:00",
+    "updatedAt": "2026-11-26T16:30:57+08:00",
     "updatedBy": "admin",
     "siteName": "泉心泉意 · 软件版本中心"
   },
@@ -21,6 +21,27 @@
       "owner": "",
       "archived": false,
       "releases": [
+        {
+          "version": "V3.3.9",
+          "screenVersion": "V6.7.5",
+          "date": "2026-11-26T16:28:12",
+          "channel": "stable",
+          "status": "normal",
+          "tags": [],
+          "readme": "26/11/26 8.6 qxqy_f407_frtos（加热制冷-原算法）\n单片机版本：V3.3.9，串口屏版本：V6.7.5\n1，程控结束，蜂鸣器一直三声短鸣",
+          "changelog": [],
+          "download": {
+            "type": "baidupan",
+            "url": "https://pan.baidu.com/s/17UYGVgB7HtnaNo7C04BmfQ",
+            "password": "n4xa",
+            "fileName": "金属浴B5-MAX软件-V3.3.9-261126",
+            "fileSize": "30.24MB",
+            "sha256": "",
+            "mirror": ""
+          },
+          "internalNote": "",
+          "id": "rel_mwxam4wb_4jxx45"
+        },
         {
           "version": "V3.3.8",
           "screenVersion": "V6.7.5",
